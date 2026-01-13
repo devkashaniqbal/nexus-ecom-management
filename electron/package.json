@@ -1,0 +1,52 @@
+{
+  "name": "company-management-electron",
+  "version": "1.0.0",
+  "description": "Electron app for screenshot monitoring",
+  "main": "main/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux"
+  },
+  "author": "Company Dev Team",
+  "license": "PROPRIETARY",
+  "dependencies": {
+    "electron-store": "^8.1.0",
+    "axios": "^1.6.2",
+    "sharp": "^0.33.1",
+    "active-win": "^8.0.0"
+  },
+  "devDependencies": {
+    "electron": "^28.1.0",
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.company.management",
+    "productName": "Company Management",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main/**/*",
+      "preload/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/icon.icns"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "assets/icon.png",
+      "category": "Utility"
+    }
+  }
+}
