@@ -1,5 +1,6 @@
 import winston from 'winston';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -12,31 +13,44 @@ const logFormat = winston.format.combine(
   winston.format.json()
 );
 
-const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || 'info',
-  format: logFormat,
-  transports: [
+const transports = [];
+
+// Always add console transport
+transports.push(new winston.transports.Console({
+  format: winston.format.combine(
+    winston.format.colorize(),
+    winston.format.simple()
+  ),
+}));
+
+// Only add file transports if logs directory exists or can be created
+const logsDir = path.join(__dirname, '../../logs');
+try {
+  if (!fs.existsSync(logsDir)) {
+    fs.mkdirSync(logsDir, { recursive: true });
+  }
+  transports.push(
     new winston.transports.File({
-      filename: path.join(__dirname, '../../logs/error.log'),
+      filename: path.join(logsDir, 'error.log'),
       level: 'error',
       maxsize: 5242880,
       maxFiles: 5,
     }),
     new winston.transports.File({
-      filename: path.join(__dirname, '../../logs/combined.log'),
+      filename: path.join(logsDir, 'combined.log'),
       maxsize: 5242880,
       maxFiles: 5,
-    }),
-  ],
-});
-
-if (process.env.NODE_ENV !== 'production') {
-  logger.add(new winston.transports.Console({
-    format: winston.format.combine(
-      winston.format.colorize(),
-      winston.format.simple()
-    ),
-  }));
+    })
+  );
+} catch (err) {
+  // File logging not available, console only
+  console.log('File logging disabled - using console only');
 }
+
+const logger = winston.createLogger({
+  level: process.env.LOG_LEVEL || 'info',
+  format: logFormat,
+  transports,
+});
 
 export default logger;
