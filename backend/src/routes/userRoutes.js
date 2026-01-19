@@ -16,12 +16,14 @@ router.get('/route-permissions/available', restrictTo('admin'), (req, res) => {
 router.get('/', restrictTo('admin', 'manager'), async (req, res, next) => {
   try {
     const User = (await import('../models/User.js')).default;
-    const { department, role, isActive = true, page = 1, limit = 20 } = req.query;
+    const { department, role, isActive, page = 1, limit = 20 } = req.query;
 
     const query = {};
     if (department) query.department = department;
     if (role) query.role = role;
-    if (isActive !== undefined) query.isActive = isActive === 'true';
+    if (isActive !== undefined && isActive !== '') {
+      query.isActive = isActive === 'true';
+    }
 
     const skip = (page - 1) * limit;
     const users = await User.find(query)

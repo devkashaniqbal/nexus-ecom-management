@@ -16,7 +16,9 @@
       "Bash(MONGODB_URI=\"mongodb+srv://admin:admin@cluster0.9myu8zx.mongodb.net/nexus-ecom?appName=Cluster0\" node:*)",
       "Bash(node check-users.js:*)",
       "Bash(node fix-indexes.js)",
-      "Bash(node reset-db.js:*)"
+      "Bash(node reset-db.js:*)",
+      "Bash(node prod-check.js:*)",
+      "Bash(curl:*)"
     ]
   }
 }
