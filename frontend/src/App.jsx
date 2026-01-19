@@ -4,6 +4,7 @@ import { useAuth } from './context/AuthContext';
 
 import Layout from './components/Layout';
 import PrivateRoute from './components/PrivateRoute';
+import PermissionProtectedRoute from './components/PermissionProtectedRoute';
 import LoadingSpinner from './components/LoadingSpinner';
 
 // Lazy load pages for better performance
@@ -49,24 +50,110 @@ function App() {
             }
           >
             <Route index element={<Navigate to="/dashboard" replace />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="attendance" element={<Attendance />} />
-            <Route path="projects" element={<Projects />} />
-            <Route path="timesheets" element={<Timesheets />} />
-            <Route path="assets" element={<Assets />} />
-            <Route path="expenses" element={<Expenses />} />
-            <Route path="leaves" element={<Leaves />} />
-            <Route path="announcements" element={<Announcements />} />
-            <Route path="ai-agent" element={<AIAgent />} />
+
+            <Route path="dashboard" element={
+              <PermissionProtectedRoute routeKey="dashboard">
+                <Dashboard />
+              </PermissionProtectedRoute>
+            } />
+
+            <Route path="attendance" element={
+              <PermissionProtectedRoute routeKey="attendance">
+                <Attendance />
+              </PermissionProtectedRoute>
+            } />
+
+            <Route path="projects" element={
+              <PermissionProtectedRoute routeKey="projects">
+                <Projects />
+              </PermissionProtectedRoute>
+            } />
+
+            <Route path="timesheets" element={
+              <PermissionProtectedRoute routeKey="timesheets">
+                <Timesheets />
+              </PermissionProtectedRoute>
+            } />
+
+            <Route path="assets" element={
+              <PermissionProtectedRoute routeKey="assets">
+                <Assets />
+              </PermissionProtectedRoute>
+            } />
+
+            <Route path="expenses" element={
+              <PermissionProtectedRoute routeKey="expenses">
+                <Expenses />
+              </PermissionProtectedRoute>
+            } />
+
+            <Route path="leaves" element={
+              <PermissionProtectedRoute routeKey="leaves">
+                <Leaves />
+              </PermissionProtectedRoute>
+            } />
+
+            <Route path="announcements" element={
+              <PermissionProtectedRoute routeKey="announcements">
+                <Announcements />
+              </PermissionProtectedRoute>
+            } />
+
+            <Route path="ai-agent" element={
+              <PermissionProtectedRoute routeKey="ai-agent">
+                <AIAgent />
+              </PermissionProtectedRoute>
+            } />
+
             <Route path="profile" element={<Profile />} />
-            <Route path="users" element={<Users />} />
-            <Route path="workspaces" element={<Workspaces />} />
-            <Route path="workspace/:workspaceId" element={<WorkspaceDetail />} />
-            <Route path="workspace/:workspaceId/space/:spaceId" element={<SpaceDetail />} />
-            <Route path="tasks" element={<Tasks />} />
-            <Route path="teams" element={<Teams />} />
-            <Route path="messages" element={<Messages />} />
-            <Route path="notifications" element={<Notifications />} />
+
+            <Route path="users" element={
+              <PermissionProtectedRoute routeKey="users">
+                <Users />
+              </PermissionProtectedRoute>
+            } />
+
+            <Route path="workspaces" element={
+              <PermissionProtectedRoute routeKey="workspaces">
+                <Workspaces />
+              </PermissionProtectedRoute>
+            } />
+
+            <Route path="workspace/:workspaceId" element={
+              <PermissionProtectedRoute routeKey="workspaces">
+                <WorkspaceDetail />
+              </PermissionProtectedRoute>
+            } />
+
+            <Route path="workspace/:workspaceId/space/:spaceId" element={
+              <PermissionProtectedRoute routeKey="workspaces">
+                <SpaceDetail />
+              </PermissionProtectedRoute>
+            } />
+
+            <Route path="tasks" element={
+              <PermissionProtectedRoute routeKey="tasks">
+                <Tasks />
+              </PermissionProtectedRoute>
+            } />
+
+            <Route path="teams" element={
+              <PermissionProtectedRoute routeKey="teams">
+                <Teams />
+              </PermissionProtectedRoute>
+            } />
+
+            <Route path="messages" element={
+              <PermissionProtectedRoute routeKey="messages">
+                <Messages />
+              </PermissionProtectedRoute>
+            } />
+
+            <Route path="notifications" element={
+              <PermissionProtectedRoute routeKey="notifications">
+                <Notifications />
+              </PermissionProtectedRoute>
+            } />
           </Route>
 
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

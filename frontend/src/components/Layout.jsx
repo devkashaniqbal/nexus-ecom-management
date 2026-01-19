@@ -2,64 +2,38 @@ import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useWorkspace } from '../context/WorkspaceContext';
+import { AVAILABLE_ROUTES, getDefaultRoutes } from '../config/routePermissions';
 import NotificationDropdown from './NotificationDropdown';
 import {
-  LayoutDashboard,
-  Clock,
-  FolderKanban,
-  FileText,
-  Package,
-  DollarSign,
-  Calendar,
-  Bell,
-  Users,
   LogOut,
   Menu,
   X,
   User,
-  Brain,
-  Briefcase,
-  CheckSquare,
-  UsersRound,
-  MessageSquare,
   ChevronDown,
   Search,
 } from 'lucide-react';
 
 const Layout = () => {
-  const { user, logout, isAdmin, isManager } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
   const { workspaces, currentWorkspace, switchWorkspace } = useWorkspace();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [workspaceDropdownOpen, setWorkspaceDropdownOpen] = useState(false);
 
-  const navItems = [
-    { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['admin', 'manager', 'employee'] },
-    { path: '/workspaces', icon: Briefcase, label: 'Workspaces', roles: ['admin', 'manager', 'employee'] },
-    { path: '/tasks', icon: CheckSquare, label: 'My Tasks', roles: ['admin', 'manager', 'employee'] },
-    { path: '/teams', icon: UsersRound, label: 'Teams', roles: ['admin', 'manager', 'employee'] },
-    { path: '/messages', icon: MessageSquare, label: 'Messages', roles: ['admin', 'manager', 'employee'] },
-    { path: '/notifications', icon: Bell, label: 'Notifications', roles: ['admin', 'manager', 'employee'] },
-    { path: '/attendance', icon: Clock, label: 'Attendance', roles: ['admin', 'manager', 'employee'] },
-    { path: '/projects', icon: FolderKanban, label: 'Projects', roles: ['admin', 'manager', 'employee'] },
-    { path: '/timesheets', icon: FileText, label: 'Timesheets', roles: ['admin', 'manager', 'employee'] },
-    { path: '/assets', icon: Package, label: 'Assets', roles: ['admin', 'manager', 'employee'] },
-    { path: '/expenses', icon: DollarSign, label: 'Expenses', roles: ['admin', 'manager', 'employee'] },
-    { path: '/leaves', icon: Calendar, label: 'Leaves', roles: ['admin', 'manager', 'employee'] },
-    { path: '/announcements', icon: Bell, label: 'Announcements', roles: ['admin', 'manager', 'employee'] },
-    { path: '/ai-agent', icon: Brain, label: 'AI Agent', roles: ['admin', 'manager', 'employee'] },
-    { path: '/users', icon: Users, label: 'Users', roles: ['admin', 'manager'] },
-  ];
-
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  const filteredNavItems = navItems.filter((item) =>
-    item.roles.includes(user?.role)
-  );
+  const userAllowedRoutes = user?.allowedRoutes || getDefaultRoutes(user?.role);
+
+  const filteredNavItems = AVAILABLE_ROUTES.filter((route) => {
+    if (route.adminOnly && !isAdmin) {
+      return false;
+    }
+    return userAllowedRoutes.includes(route.key);
+  });
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -80,7 +54,7 @@ const Layout = () => {
           </button>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1">
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {filteredNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
@@ -95,7 +69,7 @@ const Layout = () => {
                     : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
-                <Icon size={20} />
+                {Icon && <Icon size={20} />}
                 {sidebarOpen && <span className="font-medium">{item.label}</span>}
               </Link>
             );

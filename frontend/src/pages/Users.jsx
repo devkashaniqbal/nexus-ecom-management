@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { userAPI, authAPI } from '../services/api';
+import { AVAILABLE_ROUTES, getDefaultRoutes } from '../config/routePermissions';
 import LoadingSpinner from '../components/LoadingSpinner';
 import {
   Users,
@@ -13,6 +14,8 @@ import {
   Plus,
   X,
   UserPlus,
+  Shield,
+  Check,
 } from 'lucide-react';
 
 const UsersManagement = () => {
@@ -27,7 +30,11 @@ const UsersManagement = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showPermissionsModal, setShowPermissionsModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [permissionsUser, setPermissionsUser] = useState(null);
+  const [selectedPermissions, setSelectedPermissions] = useState([]);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -39,6 +46,7 @@ const UsersManagement = () => {
     role: 'employee',
     phone: '',
     dateOfJoining: new Date().toISOString().split('T')[0],
+    allowedRoutes: [],
   });
 
   useEffect(() => {
@@ -90,6 +98,7 @@ const UsersManagement = () => {
   };
 
   const handleOpenAddModal = () => {
+    const defaultRoutes = getDefaultRoutes('employee');
     setFormData({
       firstName: '',
       lastName: '',
@@ -101,6 +110,7 @@ const UsersManagement = () => {
       role: 'employee',
       phone: '',
       dateOfJoining: new Date().toISOString().split('T')[0],
+      allowedRoutes: defaultRoutes,
     });
     setShowAddModal(true);
     setError('');
@@ -120,15 +130,109 @@ const UsersManagement = () => {
       role: 'employee',
       phone: '',
       dateOfJoining: new Date().toISOString().split('T')[0],
+      allowedRoutes: [],
     });
+  };
+
+  const handleOpenEditModal = (userData) => {
+    setSelectedUser(userData);
+    setFormData({
+      firstName: userData.firstName || '',
+      lastName: userData.lastName || '',
+      email: userData.email || '',
+      password: '',
+      employeeId: userData.employeeId || '',
+      department: userData.department || 'Engineering',
+      designation: userData.designation || '',
+      role: userData.role || 'employee',
+      phone: userData.phone || '',
+      dateOfJoining: userData.dateOfJoining ? new Date(userData.dateOfJoining).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      allowedRoutes: userData.allowedRoutes || getDefaultRoutes(userData.role),
+    });
+    setShowEditModal(true);
+    setError('');
+    setSuccess('');
+  };
+
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setSelectedUser(null);
+  };
+
+  const handleOpenPermissionsModal = (userData) => {
+    setPermissionsUser(userData);
+    setSelectedPermissions(userData.allowedRoutes || getDefaultRoutes(userData.role));
+    setShowPermissionsModal(true);
+    setError('');
+    setSuccess('');
+  };
+
+  const handleClosePermissionsModal = () => {
+    setShowPermissionsModal(false);
+    setPermissionsUser(null);
+    setSelectedPermissions([]);
+  };
+
+  const handlePermissionToggle = (routeKey) => {
+    setSelectedPermissions(prev => {
+      if (prev.includes(routeKey)) {
+        return prev.filter(k => k !== routeKey);
+      } else {
+        return [...prev, routeKey];
+      }
+    });
+  };
+
+  const handleSelectAllPermissions = () => {
+    const allKeys = AVAILABLE_ROUTES
+      .filter(r => !r.adminOnly || permissionsUser?.role === 'admin')
+      .map(r => r.key);
+    setSelectedPermissions(allKeys);
+  };
+
+  const handleDeselectAllPermissions = () => {
+    setSelectedPermissions(['dashboard']);
+  };
+
+  const handleSavePermissions = async () => {
+    if (!permissionsUser) return;
+
+    try {
+      setSubmitting(true);
+      setError('');
+      await userAPI.updatePermissions(permissionsUser._id, selectedPermissions);
+      setSuccess('Permissions updated successfully');
+      await fetchUsers();
+      setTimeout(() => {
+        handleClosePermissionsModal();
+      }, 1500);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to update permissions');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => {
+      const newData = { ...prev, [name]: value };
+      if (name === 'role') {
+        newData.allowedRoutes = getDefaultRoutes(value);
+      }
+      return newData;
+    });
+  };
+
+  const handleRouteToggle = (routeKey) => {
+    setFormData(prev => {
+      const currentRoutes = prev.allowedRoutes || [];
+      if (currentRoutes.includes(routeKey)) {
+        return { ...prev, allowedRoutes: currentRoutes.filter(k => k !== routeKey) };
+      } else {
+        return { ...prev, allowedRoutes: [...currentRoutes, routeKey] };
+      }
+    });
   };
 
   const generatePassword = () => {
@@ -156,7 +260,10 @@ const UsersManagement = () => {
       setError('');
       setSuccess('');
 
-      await authAPI.register(formData);
+      await authAPI.register({
+        ...formData,
+        allowedRoutes: formData.allowedRoutes,
+      });
 
       setSuccess(`Employee added successfully! Username: ${formData.email}, Password: ${formData.password}`);
 
@@ -171,13 +278,55 @@ const UsersManagement = () => {
     }
   };
 
+  const handleUpdateEmployee = async (e) => {
+    e.preventDefault();
+
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.employeeId) {
+      setError('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      setError('');
+      setSuccess('');
+
+      const updateData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        employeeId: formData.employeeId,
+        department: formData.department,
+        designation: formData.designation,
+        role: formData.role,
+        phone: formData.phone,
+        dateOfJoining: formData.dateOfJoining,
+        allowedRoutes: formData.allowedRoutes,
+      };
+
+      await userAPI.update(selectedUser._id, updateData);
+      setSuccess('Employee updated successfully!');
+
+      setTimeout(() => {
+        handleCloseEditModal();
+        fetchUsers();
+      }, 1500);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to update employee');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   if (!isManager && !isAdmin) {
     return (
-      <div className="bg-white rounded-lg shadow p-12 text-center">
-        <AlertCircle className="w-12 h-12 text-red-300 mx-auto mb-3" />
-        <p className="text-gray-600">
-          You don't have permission to access this page
-        </p>
+      <div className="p-6">
+        <div className="bg-white rounded-lg shadow p-12 text-center">
+          <AlertCircle className="w-12 h-12 text-red-300 mx-auto mb-3" />
+          <p className="text-gray-600">
+            You don't have permission to access this page
+          </p>
+        </div>
       </div>
     );
   }
@@ -234,8 +383,42 @@ const UsersManagement = () => {
     </span>
   );
 
+  const RoutePermissionsCheckboxes = ({ selectedRoutes, onToggle, userRole, compact = false }) => {
+    const availableRoutes = AVAILABLE_ROUTES.filter(r => !r.adminOnly || userRole === 'admin');
+
+    return (
+      <div className={`grid ${compact ? 'grid-cols-2' : 'grid-cols-2 md:grid-cols-3'} gap-2`}>
+        {availableRoutes.map((route) => {
+          const isSelected = selectedRoutes.includes(route.key);
+          const Icon = route.icon;
+          return (
+            <label
+              key={route.key}
+              className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors ${
+                isSelected
+                  ? 'bg-primary-50 border-primary-300'
+                  : 'bg-white border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={() => onToggle(route.key)}
+                className="w-4 h-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
+              />
+              {Icon && <Icon size={16} className={isSelected ? 'text-primary-600' : 'text-gray-400'} />}
+              <span className={`text-sm ${isSelected ? 'text-primary-700 font-medium' : 'text-gray-600'}`}>
+                {route.label}
+              </span>
+            </label>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -374,7 +557,7 @@ const UsersManagement = () => {
                     Status
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-gray-900">
-                    Joined
+                    Permissions
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-gray-900">
                     Actions
@@ -411,8 +594,10 @@ const UsersManagement = () => {
                     <td className="py-3 px-4">
                       <StatusBadge isActive={userData.isActive} />
                     </td>
-                    <td className="py-3 px-4 text-gray-600">
-                      {new Date(userData.createdAt).toLocaleDateString()}
+                    <td className="py-3 px-4">
+                      <span className="text-xs text-gray-500">
+                        {userData.allowedRoutes?.length || getDefaultRoutes(userData.role).length} modules
+                      </span>
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex gap-2">
@@ -424,15 +609,33 @@ const UsersManagement = () => {
                           <Eye size={16} />
                         </button>
 
-                        {isAdmin && userData.role !== 'admin' && (
+                        {isAdmin && (
                           <>
                             <button
-                              onClick={() => handleDeleteUser(userData._id)}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                              title="Delete User"
+                              onClick={() => handleOpenEditModal(userData)}
+                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                              title="Edit User"
                             >
-                              <Trash2 size={16} />
+                              <Edit2 size={16} />
                             </button>
+
+                            <button
+                              onClick={() => handleOpenPermissionsModal(userData)}
+                              className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg"
+                              title="Manage Permissions"
+                            >
+                              <Shield size={16} />
+                            </button>
+
+                            {userData.role !== 'admin' && (
+                              <button
+                                onClick={() => handleDeleteUser(userData._id)}
+                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                                title="Delete User"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            )}
                           </>
                         )}
                       </div>
@@ -464,7 +667,7 @@ const UsersManagement = () => {
                 onClick={() => setShowDetails(false)}
                 className="text-gray-600 hover:text-gray-900"
               >
-                ✕
+                <X size={24} />
               </button>
             </div>
 
@@ -558,26 +761,26 @@ const UsersManagement = () => {
                 </div>
               </div>
 
-              {/* Contact Information */}
-              {(selectedUser.phone || selectedUser.address) && (
-                <div className="pt-4 border-t border-gray-200">
-                  <h4 className="text-sm font-semibold text-gray-900 mb-3">
-                    Contact Information
-                  </h4>
-                  <div className="space-y-2">
-                    {selectedUser.phone && (
-                      <p className="text-sm text-gray-900">
-                        Phone: {selectedUser.phone}
-                      </p>
-                    )}
-                    {selectedUser.address && (
-                      <p className="text-sm text-gray-900">
-                        Address: {selectedUser.address}
-                      </p>
-                    )}
-                  </div>
+              {/* Route Permissions */}
+              <div className="pt-4 border-t border-gray-200">
+                <h4 className="text-sm font-semibold text-gray-900 mb-3">
+                  Accessible Modules
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {(selectedUser.allowedRoutes || getDefaultRoutes(selectedUser.role)).map(routeKey => {
+                    const route = AVAILABLE_ROUTES.find(r => r.key === routeKey);
+                    if (!route) return null;
+                    return (
+                      <span
+                        key={routeKey}
+                        className="px-2 py-1 bg-primary-50 text-primary-700 rounded text-xs font-medium"
+                      >
+                        {route.label}
+                      </span>
+                    );
+                  })}
                 </div>
-              )}
+              </div>
 
               {/* Close Button */}
               <div className="flex gap-3 pt-4 border-t border-gray-200">
@@ -593,10 +796,95 @@ const UsersManagement = () => {
         </div>
       )}
 
+      {/* Permissions Modal */}
+      {showPermissionsModal && permissionsUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Shield className="w-6 h-6 text-purple-600" />
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Manage Permissions</h2>
+                  <p className="text-sm text-gray-500">{permissionsUser.firstName} {permissionsUser.lastName}</p>
+                </div>
+              </div>
+              <button
+                onClick={handleClosePermissionsModal}
+                className="text-gray-600 hover:text-gray-900"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="p-6">
+              {error && (
+                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+              )}
+
+              {success && (
+                <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-green-700">{success}</p>
+                </div>
+              )}
+
+              <div className="mb-4 flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleSelectAllPermissions}
+                  className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded"
+                >
+                  Select All
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeselectAllPermissions}
+                  className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded"
+                >
+                  Deselect All
+                </button>
+              </div>
+
+              <p className="text-sm text-gray-600 mb-4">
+                Select the modules this user can access:
+              </p>
+
+              <RoutePermissionsCheckboxes
+                selectedRoutes={selectedPermissions}
+                onToggle={handlePermissionToggle}
+                userRole={permissionsUser.role}
+              />
+
+              <div className="flex gap-3 mt-6 pt-6 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={handleClosePermissionsModal}
+                  className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                  disabled={submitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSavePermissions}
+                  className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                  disabled={submitting}
+                >
+                  {submitting ? 'Saving...' : 'Save Permissions'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Add Employee Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <UserPlus className="w-6 h-6 text-primary-600" />
@@ -632,7 +920,7 @@ const UsersManagement = () => {
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Personal Information</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="label">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
                         First Name <span className="text-red-600">*</span>
                       </label>
                       <input
@@ -640,13 +928,13 @@ const UsersManagement = () => {
                         name="firstName"
                         value={formData.firstName}
                         onChange={handleInputChange}
-                        className="input"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-600"
                         required
                       />
                     </div>
 
                     <div>
-                      <label className="label">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
                         Last Name <span className="text-red-600">*</span>
                       </label>
                       <input
@@ -654,13 +942,13 @@ const UsersManagement = () => {
                         name="lastName"
                         value={formData.lastName}
                         onChange={handleInputChange}
-                        className="input"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-600"
                         required
                       />
                     </div>
 
                     <div>
-                      <label className="label">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
                         Employee ID <span className="text-red-600">*</span>
                       </label>
                       <input
@@ -668,20 +956,20 @@ const UsersManagement = () => {
                         name="employeeId"
                         value={formData.employeeId}
                         onChange={handleInputChange}
-                        className="input"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-600"
                         placeholder="EMP001"
                         required
                       />
                     </div>
 
                     <div>
-                      <label className="label">Phone Number</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                       <input
                         type="tel"
                         name="phone"
                         value={formData.phone}
                         onChange={handleInputChange}
-                        className="input"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-600"
                         placeholder="+1234567890"
                       />
                     </div>
@@ -693,7 +981,7 @@ const UsersManagement = () => {
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Login Credentials</h3>
                   <div className="grid grid-cols-1 gap-4">
                     <div>
-                      <label className="label">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
                         Email (Username) <span className="text-red-600">*</span>
                       </label>
                       <input
@@ -701,7 +989,7 @@ const UsersManagement = () => {
                         name="email"
                         value={formData.email}
                         onChange={handleInputChange}
-                        className="input"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-600"
                         placeholder="employee@company.com"
                         required
                       />
@@ -709,7 +997,7 @@ const UsersManagement = () => {
                     </div>
 
                     <div>
-                      <label className="label">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
                         Password <span className="text-red-600">*</span>
                       </label>
                       <div className="flex gap-2">
@@ -718,7 +1006,7 @@ const UsersManagement = () => {
                           name="password"
                           value={formData.password}
                           onChange={handleInputChange}
-                          className="input flex-1"
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-600"
                           placeholder="Minimum 8 characters"
                           required
                           minLength={8}
@@ -741,14 +1029,14 @@ const UsersManagement = () => {
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Employment Details</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="label">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
                         Department <span className="text-red-600">*</span>
                       </label>
                       <select
                         name="department"
                         value={formData.department}
                         onChange={handleInputChange}
-                        className="input"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-600"
                         required
                       >
                         <option value="Engineering">Engineering</option>
@@ -762,7 +1050,7 @@ const UsersManagement = () => {
                     </div>
 
                     <div>
-                      <label className="label">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
                         Designation <span className="text-red-600">*</span>
                       </label>
                       <input
@@ -770,21 +1058,21 @@ const UsersManagement = () => {
                         name="designation"
                         value={formData.designation}
                         onChange={handleInputChange}
-                        className="input"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-600"
                         placeholder="Software Developer"
                         required
                       />
                     </div>
 
                     <div>
-                      <label className="label">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
                         Role <span className="text-red-600">*</span>
                       </label>
                       <select
                         name="role"
                         value={formData.role}
                         onChange={handleInputChange}
-                        className="input"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-600"
                         required
                       >
                         <option value="employee">Employee</option>
@@ -799,7 +1087,7 @@ const UsersManagement = () => {
                     </div>
 
                     <div>
-                      <label className="label">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
                         Date of Joining <span className="text-red-600">*</span>
                       </label>
                       <input
@@ -807,11 +1095,24 @@ const UsersManagement = () => {
                         name="dateOfJoining"
                         value={formData.dateOfJoining}
                         onChange={handleInputChange}
-                        className="input"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-600"
                         required
                       />
                     </div>
                   </div>
+                </div>
+
+                {/* Route Permissions */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Module Access Permissions</h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Select which modules this user can access. Dashboard is always enabled.
+                  </p>
+                  <RoutePermissionsCheckboxes
+                    selectedRoutes={formData.allowedRoutes}
+                    onToggle={handleRouteToggle}
+                    userRole={formData.role}
+                  />
                 </div>
               </div>
 
@@ -831,6 +1132,222 @@ const UsersManagement = () => {
                   disabled={submitting}
                 >
                   {submitting ? 'Adding Employee...' : 'Add Employee'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Employee Modal */}
+      {showEditModal && selectedUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Edit2 className="w-6 h-6 text-blue-600" />
+                <h2 className="text-xl font-bold text-gray-900">Edit Employee</h2>
+              </div>
+              <button
+                onClick={handleCloseEditModal}
+                className="text-gray-600 hover:text-gray-900"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateEmployee} className="p-6">
+              {/* Messages */}
+              {error && (
+                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+              )}
+
+              {success && (
+                <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-green-700">{success}</p>
+                </div>
+              )}
+
+              <div className="space-y-6">
+                {/* Personal Information */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Personal Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        First Name <span className="text-red-600">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="firstName"
+                        value={formData.firstName}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-600"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Last Name <span className="text-red-600">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="lastName"
+                        value={formData.lastName}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-600"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Employee ID <span className="text-red-600">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="employeeId"
+                        value={formData.employeeId}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-600"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Email <span className="text-red-600">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-600"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-600"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Date of Joining <span className="text-red-600">*</span>
+                      </label>
+                      <input
+                        type="date"
+                        name="dateOfJoining"
+                        value={formData.dateOfJoining}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-600"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Employment Details */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Employment Details</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Department <span className="text-red-600">*</span>
+                      </label>
+                      <select
+                        name="department"
+                        value={formData.department}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-600"
+                        required
+                      >
+                        <option value="Engineering">Engineering</option>
+                        <option value="Design">Design</option>
+                        <option value="Marketing">Marketing</option>
+                        <option value="Sales">Sales</option>
+                        <option value="HR">HR</option>
+                        <option value="Finance">Finance</option>
+                        <option value="Operations">Operations</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Designation <span className="text-red-600">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="designation"
+                        value={formData.designation}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-600"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Role <span className="text-red-600">*</span>
+                      </label>
+                      <select
+                        name="role"
+                        value={formData.role}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-600"
+                        required
+                      >
+                        <option value="employee">Employee</option>
+                        <option value="manager">Manager</option>
+                        {isAdmin && <option value="admin">Admin</option>}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Route Permissions */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Module Access Permissions</h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Select which modules this user can access.
+                  </p>
+                  <RoutePermissionsCheckboxes
+                    selectedRoutes={formData.allowedRoutes}
+                    onToggle={handleRouteToggle}
+                    userRole={formData.role}
+                  />
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 mt-6 pt-6 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={handleCloseEditModal}
+                  className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                  disabled={submitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  disabled={submitting}
+                >
+                  {submitting ? 'Updating...' : 'Update Employee'}
                 </button>
               </div>
             </form>

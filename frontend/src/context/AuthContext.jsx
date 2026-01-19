@@ -1,5 +1,6 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { getDefaultRoutes } from '../config/routePermissions';
 
 const AuthContext = createContext(null);
 
@@ -72,6 +73,29 @@ export const AuthProvider = ({ children }) => {
     setUser((prev) => ({ ...prev, ...updatedData }));
   };
 
+  const getAllowedRoutes = useCallback(() => {
+    if (!user) return [];
+    return user.allowedRoutes || getDefaultRoutes(user.role);
+  }, [user]);
+
+  const hasRouteAccess = useCallback((routeKey) => {
+    if (!user) return false;
+    if (user.role === 'admin') return true;
+    const allowedRoutes = user.allowedRoutes || getDefaultRoutes(user.role);
+    return allowedRoutes.includes(routeKey);
+  }, [user]);
+
+  const hasPathAccess = useCallback((path) => {
+    if (!user) return false;
+    if (user.role === 'admin') return true;
+
+    const routeKey = path.replace(/^\//, '').split('/')[0];
+    if (!routeKey || routeKey === 'profile') return true;
+
+    const allowedRoutes = user.allowedRoutes || getDefaultRoutes(user.role);
+    return allowedRoutes.includes(routeKey);
+  }, [user]);
+
   const value = {
     user,
     token,
@@ -83,6 +107,9 @@ export const AuthProvider = ({ children }) => {
     isAdmin: user?.role === 'admin',
     isManager: user?.role === 'manager' || user?.role === 'admin',
     isEmployee: user?.role === 'employee',
+    getAllowedRoutes,
+    hasRouteAccess,
+    hasPathAccess,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

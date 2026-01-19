@@ -142,6 +142,8 @@ export const userAPI = {
   getOne: (id) => api.get(`/users/${id}`),
   update: (id, data) => api.put(`/users/${id}`, data),
   delete: (id) => api.delete(`/users/${id}`),
+  getAvailableRoutes: () => api.get('/users/route-permissions/available'),
+  updatePermissions: (id, allowedRoutes) => api.put(`/users/${id}/permissions`, { allowedRoutes }),
 };
 
 export const aiAgentAPI = {
