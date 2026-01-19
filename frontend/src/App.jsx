@@ -14,6 +14,13 @@ import Announcements from './pages/Announcements';
 import Profile from './pages/Profile';
 import Users from './pages/Users';
 import AIAgent from './pages/AIAgent';
+import Workspaces from './pages/Workspaces';
+import Tasks from './pages/Tasks';
+import Teams from './pages/Teams';
+import Messages from './pages/Messages';
+import Notifications from './pages/Notifications';
+import WorkspaceDetail from './pages/WorkspaceDetail';
+import SpaceDetail from './pages/SpaceDetail';
 
 import Layout from './components/Layout';
 import PrivateRoute from './components/PrivateRoute';
@@ -51,6 +58,13 @@ function App() {
           <Route path="ai-agent" element={<AIAgent />} />
           <Route path="profile" element={<Profile />} />
           <Route path="users" element={<Users />} />
+          <Route path="workspaces" element={<Workspaces />} />
+          <Route path="workspace/:workspaceId" element={<WorkspaceDetail />} />
+          <Route path="workspace/:workspaceId/space/:spaceId" element={<SpaceDetail />} />
+          <Route path="tasks" element={<Tasks />} />
+          <Route path="teams" element={<Teams />} />
+          <Route path="messages" element={<Messages />} />
+          <Route path="notifications" element={<Notifications />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

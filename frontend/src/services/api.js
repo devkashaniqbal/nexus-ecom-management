@@ -158,4 +158,147 @@ export const aiAgentAPI = {
   getAnalytics: (params) => api.get('/ai-agent/analytics', { params }),
 };
 
+// Workspace API
+export const workspaceAPI = {
+  getAll: () => api.get('/workspaces'),
+  get: (id) => api.get(`/workspaces/${id}`),
+  getById: (id) => api.get(`/workspaces/${id}`),
+  create: (data) => api.post('/workspaces', data),
+  update: (id, data) => api.put(`/workspaces/${id}`, data),
+  delete: (id) => api.delete(`/workspaces/${id}`),
+  inviteMember: (id, data) => api.post(`/workspaces/${id}/invite`, data),
+  removeMember: (id, userId) => api.delete(`/workspaces/${id}/members/${userId}`),
+  updateMemberRole: (id, userId, role) => api.put(`/workspaces/${id}/members/${userId}/role`, { role }),
+  createInviteLink: (id, data) => api.post(`/workspaces/${id}/invite-link`, data),
+  joinByLink: (code) => api.post(`/workspaces/join/${code}`),
+  getActivity: (id, params) => api.get(`/workspaces/${id}/activity`, { params })
+};
+
+// Space API
+export const spaceAPI = {
+  getAll: (workspaceId) => api.get(`/workspaces/${workspaceId}/spaces`),
+  get: (workspaceId, spaceId) => api.get(`/workspaces/${workspaceId}/spaces/${spaceId}`),
+  getById: (workspaceId, spaceId) => api.get(`/workspaces/${workspaceId}/spaces/${spaceId}`),
+  create: (workspaceId, data) => api.post(`/workspaces/${workspaceId}/spaces`, data),
+  update: (workspaceId, spaceId, data) => api.put(`/workspaces/${workspaceId}/spaces/${spaceId}`, data),
+  delete: (workspaceId, spaceId) => api.delete(`/workspaces/${workspaceId}/spaces/${spaceId}`),
+  addMember: (workspaceId, spaceId, data) => api.post(`/workspaces/${workspaceId}/spaces/${spaceId}/members`, data),
+  removeMember: (workspaceId, spaceId, userId) => api.delete(`/workspaces/${workspaceId}/spaces/${spaceId}/members/${userId}`),
+  archive: (workspaceId, spaceId) => api.post(`/workspaces/${workspaceId}/spaces/${spaceId}/archive`),
+  restore: (workspaceId, spaceId) => api.post(`/workspaces/${workspaceId}/spaces/${spaceId}/restore`)
+};
+
+// Folder API
+export const folderAPI = {
+  getAll: (workspaceId, spaceId) => api.get(`/workspaces/${workspaceId}/spaces/${spaceId}/folders`),
+  get: (workspaceId, spaceId, folderId) => api.get(`/workspaces/${workspaceId}/spaces/${spaceId}/folders/${folderId}`),
+  create: (workspaceId, spaceId, data) => api.post(`/workspaces/${workspaceId}/spaces/${spaceId}/folders`, data),
+  update: (workspaceId, spaceId, folderId, data) => api.put(`/workspaces/${workspaceId}/spaces/${spaceId}/folders/${folderId}`, data),
+  delete: (workspaceId, spaceId, folderId, moveListsTo) => api.delete(`/workspaces/${workspaceId}/spaces/${spaceId}/folders/${folderId}`, { data: { moveListsTo } }),
+  archive: (workspaceId, spaceId, folderId) => api.post(`/workspaces/${workspaceId}/spaces/${spaceId}/folders/${folderId}/archive`),
+  restore: (workspaceId, spaceId, folderId) => api.post(`/workspaces/${workspaceId}/spaces/${spaceId}/folders/${folderId}/restore`)
+};
+
+// List API
+export const listAPI = {
+  getAll: (workspaceId, spaceId, folderId) => {
+    const params = folderId ? { folderId } : {};
+    return api.get(`/workspaces/${workspaceId}/spaces/${spaceId}/lists`, { params });
+  },
+  get: (workspaceId, spaceId, listId) => api.get(`/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}`),
+  create: (workspaceId, spaceId, data) => api.post(`/workspaces/${workspaceId}/spaces/${spaceId}/lists`, data),
+  update: (workspaceId, spaceId, listId, data) => api.put(`/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}`, data),
+  delete: (workspaceId, spaceId, listId) => api.delete(`/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}`),
+  move: (workspaceId, spaceId, listId, data) => api.put(`/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/move`, data),
+  addStatus: (workspaceId, spaceId, listId, data) => api.post(`/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/statuses`, data),
+  updateStatus: (workspaceId, spaceId, listId, statusId, data) => api.put(`/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/statuses/${statusId}`, data),
+  deleteStatus: (workspaceId, spaceId, listId, statusId, moveTasksTo) => api.delete(`/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/statuses/${statusId}`, { data: { moveTasksTo } }),
+  addCustomField: (workspaceId, spaceId, listId, data) => api.post(`/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/custom-fields`, data)
+};
+
+// Task API
+export const taskAPI = {
+  getAll: (params) => api.get('/tasks', { params }),
+  getMyTasks: (params) => api.get('/tasks/my-tasks', { params }),
+  getByList: (workspaceId, spaceId, listId, params) => api.get(`/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/tasks`, { params }),
+  get: (id) => api.get(`/tasks/${id}`),
+  create: (workspaceId, spaceId, listId, data) => api.post(`/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/tasks`, data),
+  update: (id, data) => api.put(`/tasks/${id}`, data),
+  delete: (id) => api.delete(`/tasks/${id}`),
+  reorder: (listId, data) => api.put(`/tasks/list/${listId}/reorder`, data),
+  addAssignee: (id, userId) => api.post(`/tasks/${id}/assignees`, { userId }),
+  removeAssignee: (id, userId) => api.delete(`/tasks/${id}/assignees/${userId}`),
+  addComment: (id, data) => api.post(`/tasks/${id}/comments`, data),
+  getComments: (id, params) => api.get(`/tasks/${id}/comments`, { params }),
+  addChecklist: (id, data) => api.post(`/tasks/${id}/checklists`, data),
+  updateChecklistItem: (id, checklistId, itemId, data) => api.put(`/tasks/${id}/checklists/${checklistId}/items/${itemId}`, data),
+  addAttachment: (id, data) => api.post(`/tasks/${id}/attachments`, data),
+  startTimeTracking: (id) => api.post(`/tasks/${id}/time-tracking/start`),
+  stopTimeTracking: (id, data) => api.post(`/tasks/${id}/time-tracking/stop`, data),
+  addDependency: (id, data) => api.post(`/tasks/${id}/dependencies`, data),
+  move: (id, data) => api.put(`/tasks/${id}/move`, data),
+  watch: (id) => api.post(`/tasks/${id}/watch`),
+  unwatch: (id) => api.delete(`/tasks/${id}/watch`)
+};
+
+// Team API
+export const teamAPI = {
+  getAll: (workspaceId) => api.get(`/teams/workspace/${workspaceId}`),
+  getMyTeams: () => api.get('/teams/my-teams'),
+  get: (id) => api.get(`/teams/${id}`),
+  create: (data) => api.post('/teams', data),
+  update: (id, data) => api.put(`/teams/${id}`, data),
+  delete: (id) => api.delete(`/teams/${id}`),
+  addMember: (id, data) => api.post(`/teams/${id}/members`, data),
+  removeMember: (id, userId) => api.delete(`/teams/${id}/members/${userId}`),
+  updateMemberRole: (id, userId, role) => api.put(`/teams/${id}/members/${userId}/role`, { role }),
+  linkSpace: (id, spaceId) => api.post(`/teams/${id}/link-space`, { spaceId })
+};
+
+// Channel API
+export const channelAPI = {
+  getAll: (params) => api.get('/channels', { params }),
+  get: (id) => api.get(`/channels/${id}`),
+  create: (data) => api.post('/channels', data),
+  update: (id, data) => api.put(`/channels/${id}`, data),
+  delete: (id) => api.delete(`/channels/${id}`),
+  join: (id) => api.post(`/channels/${id}/join`),
+  leave: (id) => api.post(`/channels/${id}/leave`),
+  addMember: (id, userId) => api.post(`/channels/${id}/members`, { userId }),
+  getOrCreateDirect: (data) => api.post('/channels/direct', data),
+  markAsRead: (id) => api.post(`/channels/${id}/mark-read`),
+  sendMessage: (id, data) => api.post(`/channels/${id}/messages`, data),
+  getMessages: (id, params) => api.get(`/channels/${id}/messages`, { params }),
+  editMessage: (id, messageId, data) => api.put(`/channels/${id}/messages/${messageId}`, data),
+  deleteMessage: (id, messageId) => api.delete(`/channels/${id}/messages/${messageId}`),
+  addReaction: (id, messageId, emoji) => api.post(`/channels/${id}/messages/${messageId}/reactions`, { emoji }),
+  removeReaction: (id, messageId, emoji) => api.delete(`/channels/${id}/messages/${messageId}/reactions`, { data: { emoji } })
+};
+
+// Notification API
+export const notificationAPI = {
+  getAll: (params) => api.get('/notifications', { params }),
+  getUnreadCount: () => api.get('/notifications/unread-count'),
+  markAsRead: (id) => api.put(`/notifications/${id}/read`),
+  markAllAsRead: (data) => api.post('/notifications/mark-all-read', data),
+  delete: (id) => api.delete(`/notifications/${id}`),
+  getPreferences: () => api.get('/notifications/preferences'),
+  updatePreferences: (data) => api.put('/notifications/preferences', data)
+};
+
+// Role API
+export const roleAPI = {
+  changeRole: (userId, data) => api.put(`/roles/users/${userId}/role`, data),
+  changeManager: (userId, data) => api.put(`/roles/users/${userId}/manager`, data),
+  changeDepartment: (userId, data) => api.put(`/roles/users/${userId}/department`, data),
+  changeDesignation: (userId, data) => api.put(`/roles/users/${userId}/designation`, data),
+  promoteUser: (userId, data) => api.post(`/roles/users/${userId}/promote`, data),
+  getUserHistory: (userId, params) => api.get(`/roles/users/${userId}/history`, { params }),
+  getMyHistory: () => api.get('/roles/my-history'),
+  getPendingHandovers: () => api.get('/roles/handovers/pending'),
+  completeHandover: (roleHistoryId, data) => api.post(`/roles/handovers/${roleHistoryId}/complete`, data),
+  updateHandoverTask: (roleHistoryId, taskIndex, data) => api.put(`/roles/handovers/${roleHistoryId}/tasks/${taskIndex}`, data),
+  getAllChanges: (params) => api.get('/roles/changes', { params })
+};
+
 export default api;

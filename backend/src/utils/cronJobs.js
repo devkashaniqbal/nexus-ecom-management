@@ -2,6 +2,7 @@ import cron from 'node-cron';
 import Screenshot from '../models/Screenshot.js';
 import { deleteFromS3 } from '../services/s3Service.js';
 import logger from './logger.js';
+import notificationJobs from '../jobs/notificationJobs.js';
 
 const cleanupOldScreenshots = async () => {
   try {
@@ -35,6 +36,7 @@ const cleanupOldScreenshots = async () => {
 const cronJobs = {
   start: () => {
     cron.schedule('0 2 * * *', cleanupOldScreenshots);
+    notificationJobs.start();
     logger.info('Cron jobs started');
   }
 };
