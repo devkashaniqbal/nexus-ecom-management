@@ -26,8 +26,9 @@ router.get('/', restrictTo('admin', 'manager'), async (req, res, next) => {
     }
 
     const skip = (page - 1) * limit;
+    const selectFields = req.user.role === 'admin' ? '-password' : '-password -salary';
     const users = await User.find(query)
-      .select('-password -salary')
+      .select(selectFields)
       .populate('manager', 'firstName lastName employeeId')
       .sort({ createdAt: -1 })
       .limit(parseInt(limit))
@@ -68,7 +69,7 @@ router.get('/:id', async (req, res, next) => {
 router.put('/:id', restrictTo('admin'), async (req, res, next) => {
   try {
     const User = (await import('../models/User.js')).default;
-    const { password, salary, ...updateData } = req.body;
+    const { password, ...updateData } = req.body;
 
     const user = await User.findByIdAndUpdate(req.params.id, updateData, {
       new: true,

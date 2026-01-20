@@ -38,6 +38,7 @@ import teamRoutes from './routes/teamRoutes.js';
 import channelRoutes from './routes/channelRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import roleRoutes from './routes/roleRoutes.js';
+import salaryRoutes from './routes/salaryRoutes.js';
 
 dotenv.config();
 
@@ -106,6 +107,7 @@ app.use(`${API_PREFIX}/teams`, teamRoutes);
 app.use(`${API_PREFIX}/channels`, channelRoutes);
 app.use(`${API_PREFIX}/notifications`, notificationRoutes);
 app.use(`${API_PREFIX}/roles`, roleRoutes);
+app.use(`${API_PREFIX}/salaries`, salaryRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {

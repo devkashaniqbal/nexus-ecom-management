@@ -27,6 +27,7 @@ const Messages = lazy(() => import('./pages/Messages'));
 const Notifications = lazy(() => import('./pages/Notifications'));
 const WorkspaceDetail = lazy(() => import('./pages/WorkspaceDetail'));
 const SpaceDetail = lazy(() => import('./pages/SpaceDetail'));
+const Salaries = lazy(() => import('./pages/Salaries'));
 
 function App() {
   const { loading } = useAuth();
@@ -152,6 +153,12 @@ function App() {
             <Route path="notifications" element={
               <PermissionProtectedRoute routeKey="notifications">
                 <Notifications />
+              </PermissionProtectedRoute>
+            } />
+
+            <Route path="salaries" element={
+              <PermissionProtectedRoute routeKey="salaries">
+                <Salaries />
               </PermissionProtectedRoute>
             } />
           </Route>

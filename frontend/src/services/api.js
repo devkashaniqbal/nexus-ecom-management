@@ -146,6 +146,19 @@ export const userAPI = {
   updatePermissions: (id, allowedRoutes) => api.put(`/users/${id}/permissions`, { allowedRoutes }),
 };
 
+export const salaryAPI = {
+  getAll: (params) => api.get('/salaries', { params }),
+  getOne: (id) => api.get(`/salaries/${id}`),
+  calculate: (userId, data) => api.post(`/salaries/calculate/${userId}`, data),
+  generateAll: (data) => api.post('/salaries/generate-all', data),
+  update: (id, data) => api.put(`/salaries/${id}`, data),
+  approve: (id) => api.post(`/salaries/${id}/approve`),
+  markPaid: (id, data) => api.post(`/salaries/${id}/pay`, data),
+  getStats: (params) => api.get('/salaries/stats/summary', { params }),
+  getSettings: () => api.get('/salaries/settings'),
+  updateSettings: (data) => api.put('/salaries/settings', data),
+};
+
 export const aiAgentAPI = {
   chat: (data) => api.post('/ai-agent/chat', data),
   getChatHistory: (sessionId) => api.get(`/ai-agent/chat/sessions/${sessionId}`),

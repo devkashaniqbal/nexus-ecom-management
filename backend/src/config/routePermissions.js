@@ -14,6 +14,7 @@ export const AVAILABLE_ROUTES = [
   { key: 'announcements', label: 'Announcements', path: '/announcements', defaultEnabled: true },
   { key: 'ai-agent', label: 'AI Agent', path: '/ai-agent', defaultEnabled: false },
   { key: 'users', label: 'Users', path: '/users', adminOnly: true, defaultEnabled: true },
+  { key: 'salaries', label: 'Salaries', path: '/salaries', adminOnly: true, defaultEnabled: true },
 ];
 
 export const getDefaultRoutes = (role) => {

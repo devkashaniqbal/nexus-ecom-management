@@ -47,6 +47,7 @@ const UsersManagement = () => {
     phone: '',
     dateOfJoining: new Date().toISOString().split('T')[0],
     allowedRoutes: [],
+    salary: '',
   });
 
   useEffect(() => {
@@ -111,6 +112,7 @@ const UsersManagement = () => {
       phone: '',
       dateOfJoining: new Date().toISOString().split('T')[0],
       allowedRoutes: defaultRoutes,
+      salary: '',
     });
     setShowAddModal(true);
     setError('');
@@ -131,6 +133,7 @@ const UsersManagement = () => {
       phone: '',
       dateOfJoining: new Date().toISOString().split('T')[0],
       allowedRoutes: [],
+      salary: '',
     });
   };
 
@@ -148,6 +151,7 @@ const UsersManagement = () => {
       phone: userData.phone || '',
       dateOfJoining: userData.dateOfJoining ? new Date(userData.dateOfJoining).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
       allowedRoutes: userData.allowedRoutes || getDefaultRoutes(userData.role),
+      salary: userData.salary || '',
     });
     setShowEditModal(true);
     setError('');
@@ -263,6 +267,7 @@ const UsersManagement = () => {
       await authAPI.register({
         ...formData,
         allowedRoutes: formData.allowedRoutes,
+        salary: formData.salary ? parseFloat(formData.salary) : null,
       });
 
       setSuccess(`Employee added successfully! Username: ${formData.email}, Password: ${formData.password}`);
@@ -302,6 +307,7 @@ const UsersManagement = () => {
         phone: formData.phone,
         dateOfJoining: formData.dateOfJoining,
         allowedRoutes: formData.allowedRoutes,
+        salary: formData.salary ? parseFloat(formData.salary) : null,
       };
 
       await userAPI.update(selectedUser._id, updateData);
@@ -1099,6 +1105,22 @@ const UsersManagement = () => {
                         required
                       />
                     </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Monthly Salary (PKR)
+                      </label>
+                      <input
+                        type="number"
+                        name="salary"
+                        value={formData.salary}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-600"
+                        placeholder="50000"
+                        min="0"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Used for payroll calculations</p>
+                    </div>
                   </div>
                 </div>
 
@@ -1314,6 +1336,22 @@ const UsersManagement = () => {
                         <option value="manager">Manager</option>
                         {isAdmin && <option value="admin">Admin</option>}
                       </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Monthly Salary (PKR)
+                      </label>
+                      <input
+                        type="number"
+                        name="salary"
+                        value={formData.salary}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-600"
+                        placeholder="50000"
+                        min="0"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Used for payroll calculations</p>
                     </div>
                   </div>
                 </div>

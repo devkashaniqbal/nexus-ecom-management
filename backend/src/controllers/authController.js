@@ -6,7 +6,7 @@ import { createAuditLog, logSecurityEvent } from '../utils/auditLogger.js';
 
 export const register = async (req, res, next) => {
   try {
-    const { firstName, lastName, email, password, role, employeeId, department, designation, dateOfJoining, allowedRoutes, phone } = req.body;
+    const { firstName, lastName, email, password, role, employeeId, department, designation, dateOfJoining, allowedRoutes, phone, salary } = req.body;
 
     const existingUser = await User.findOne({ $or: [{ email }, { employeeId }] });
     if (existingUser) {
@@ -24,7 +24,8 @@ export const register = async (req, res, next) => {
       designation,
       dateOfJoining: dateOfJoining || Date.now(),
       allowedRoutes: allowedRoutes || null,
-      phone: phone || null
+      phone: phone || null,
+      salary: salary || null
     });
 
     const token = generateToken(user._id);

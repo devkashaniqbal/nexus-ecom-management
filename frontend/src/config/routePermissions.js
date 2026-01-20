@@ -13,6 +13,7 @@ import {
   CheckSquare,
   UsersRound,
   MessageSquare,
+  Wallet,
 } from 'lucide-react';
 
 export const AVAILABLE_ROUTES = [
@@ -31,6 +32,7 @@ export const AVAILABLE_ROUTES = [
   { key: 'announcements', label: 'Announcements', path: '/announcements', icon: Bell, defaultEnabled: true },
   { key: 'ai-agent', label: 'AI Agent', path: '/ai-agent', icon: Brain, defaultEnabled: false },
   { key: 'users', label: 'Users', path: '/users', icon: Users, adminOnly: true, defaultEnabled: true },
+  { key: 'salaries', label: 'Salaries', path: '/salaries', icon: Wallet, adminOnly: true, defaultEnabled: true },
 ];
 
 export const getDefaultRoutes = (role) => {
